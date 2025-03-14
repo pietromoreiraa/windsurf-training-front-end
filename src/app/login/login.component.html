@@ -22,8 +22,13 @@
         </mat-form-field>
       </div>
 
-      <button mat-raised-button color="primary" type="submit" [disabled]="!loginForm.valid">
-        Entrar
+      <div *ngIf="error" class="error-message">
+        {{ error }}
+      </div>
+
+      <button mat-raised-button color="primary" type="submit" [disabled]="!loginForm.valid || loading">
+        <mat-spinner diameter="20" *ngIf="loading"></mat-spinner>
+        <span *ngIf="!loading">Entrar</span>
       </button>
     </form>
   </div>

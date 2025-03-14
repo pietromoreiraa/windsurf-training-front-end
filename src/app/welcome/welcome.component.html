@@ -1,0 +1,44 @@
+<div class="welcome-container">
+  <mat-card class="welcome-card">
+    <mat-card-header>
+      <mat-card-title>
+        <h1>Welcome, {{ userName }}!</h1>
+      </mat-card-title>
+      <mat-card-subtitle>
+        Your personal training companion
+      </mat-card-subtitle>
+    </mat-card-header>
+
+    <mat-card-content>
+      <div class="feature-grid">
+        <div class="feature-item">
+          <mat-icon>event</mat-icon>
+          <h3>Training Schedule</h3>
+          <p>Plan and track your training sessions</p>
+        </div>
+        <div class="feature-item">
+          <mat-icon>analytics</mat-icon>
+          <h3>Progress Tracking</h3>
+          <p>Monitor your performance improvements</p>
+        </div>
+        <div class="feature-item">
+          <mat-icon>waves</mat-icon>
+          <h3>Weather Conditions</h3>
+          <p>Check ideal windsurf conditions</p>
+        </div>
+        <div class="feature-item">
+          <mat-icon>group</mat-icon>
+          <h3>Community</h3>
+          <p>Connect with other windsurfers</p>
+        </div>
+      </div>
+    </mat-card-content>
+
+    <mat-card-actions>
+      <button mat-raised-button color="primary" (click)="logout()">
+        <mat-icon>logout</mat-icon>
+        Logout
+      </button>
+    </mat-card-actions>
+  </mat-card>
+</div>

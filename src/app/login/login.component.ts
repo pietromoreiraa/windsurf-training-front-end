@@ -5,6 +5,9 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { CommonModule } from '@angular/common';
+import { Router } from '@angular/router';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { AuthService } from '../services/auth.service';
 
 @Component({
   selector: 'app-login',
@@ -17,24 +20,41 @@ import { CommonModule } from '@angular/common';
     MatButtonModule,
     MatIconModule,
     MatFormFieldModule,
-    CommonModule
+    CommonModule,
+    MatProgressSpinnerModule
   ]
 })
 export class LoginComponent {
   loginForm: FormGroup;
   hidePassword = true;
+  loading = false;
+  error: string | null = null;
 
-  constructor(private fb: FormBuilder) {
+  constructor(
+    private fb: FormBuilder,
+    private authService: AuthService,
+    private router: Router
+  ) {
     this.loginForm = this.fb.group({
       email: ['', [Validators.required, Validators.email]],
       password: ['', Validators.required]
     });
   }
 
-  onSubmit() {
+  async onSubmit(): Promise<void> {
     if (this.loginForm.valid) {
-      console.log('Form submitted:', this.loginForm.value);
-      // TODO: Implement login logic
+      this.loading = true;
+      this.error = null;
+      
+      const { email, password } = this.loginForm.value;
+      try {
+        await this.authService.login(email, password);
+        this.router.navigate(['/welcome']);
+      } catch (error) {
+        this.error = error instanceof Error ? error.message : 'Login failed. Please try again.';
+      } finally {
+        this.loading = false;
+      }
     }
   }
 }
