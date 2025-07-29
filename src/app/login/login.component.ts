@@ -7,6 +7,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { RouterLink } from '@angular/router';
 import { AuthService } from '../services/auth.service';
 
 @Component({
@@ -18,6 +19,7 @@ import { AuthService } from '../services/auth.service';
     ReactiveFormsModule,
     MatInputModule,
     MatButtonModule,
+    RouterLink,
     MatIconModule,
     MatFormFieldModule,
     CommonModule,

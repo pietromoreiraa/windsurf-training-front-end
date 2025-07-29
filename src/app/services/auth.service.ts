@@ -12,6 +12,15 @@ export interface LoginResponse {
   };
 }
 
+export interface RegisterResponse {
+  message: string;
+  user: {
+    id: string;
+    email: string;
+    name: string;
+  };
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -48,6 +57,30 @@ export class AuthService {
 
   getToken(): string | null {
     return this.storage.getItem(this.TOKEN_KEY);
+  }
+
+  async register(userData: {
+    name: string;
+    email: string;
+    password: string;
+    cpf: string;
+    birthday: string;
+  }): Promise<void> {
+    try {
+      const registerData = {
+        name: userData.name,
+        email: userData.email,
+        password: userData.password,
+        citizenId: userData.cpf,
+        birthdate: new Date(userData.birthday).toISOString()
+      };
+
+      const response = await this.api.post<RegisterResponse>('/users', registerData);
+      // Registration successful, redirect to login
+      this.router.navigate(['/login']);
+    } catch (error: any) {
+      throw new Error(error.response?.data?.message || 'Registration failed');
+    }
   }
 
   getUser(): LoginResponse['user'] | null {
