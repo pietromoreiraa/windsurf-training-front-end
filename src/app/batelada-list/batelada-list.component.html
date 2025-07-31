@@ -1,0 +1,57 @@
+<div class="list-container">
+  <mat-card class="list-card">
+    <mat-card-header class="card-header">
+      <button mat-button (click)="goBack()" class="back-button">
+        <mat-icon>arrow_back</mat-icon>
+        <span>Voltar</span>
+      </button>
+    </mat-card-header>
+
+    <mat-card-content>
+      <mat-card-title>Lista de Bateladas</mat-card-title>
+      <table mat-table [dataSource]="bigbags">
+
+        <!-- Coluna ID -->
+        <ng-container matColumnDef="id">
+          <th mat-header-cell *matHeaderCellDef> ID </th>
+          <td mat-cell *matCellDef="let element"> {{element.id}} </td>
+        </ng-container>
+
+        <!-- Coluna Nome -->
+        <ng-container matColumnDef="nome">
+          <th mat-header-cell *matHeaderCellDef> Número da batelada</th>
+          <td mat-cell *matCellDef="let element"> {{element.batchNumber}} </td>
+        </ng-container>
+
+        <!-- Coluna Data -->
+        <ng-container matColumnDef="data">
+          <th mat-header-cell *matHeaderCellDef> Data </th>
+          <td mat-cell *matCellDef="let element"> {{element.createdAt | date: 'dd/MM/yyyy'}} </td>
+        </ng-container>
+
+        <!-- Coluna Status -->
+        <ng-container matColumnDef="status">
+          <th mat-header-cell *matHeaderCellDef> Status </th>
+          <td mat-cell *matCellDef="let element"> {{element.status}} </td>
+        </ng-container>
+
+        <!-- Coluna Ações -->
+        <ng-container matColumnDef="acoes">
+          <th mat-header-cell *matHeaderCellDef> Ações </th>
+          <td mat-cell *matCellDef="let element">
+            <button mat-icon-button color="primary" (click)="editBatelada(element.id)">
+              <mat-icon>edit</mat-icon>
+            </button>
+            <button mat-icon-button color="warn" (click)="deleteBatelada(element.id)">
+              <mat-icon>delete</mat-icon>
+            </button>
+          </td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="['id', 'nome', 'data', 'status', 'acoes']"></tr>
+        <tr mat-row *matRowDef="let row; columns: ['id', 'nome', 'data', 'status', 'acoes'];"></tr>
+      </table>
+    </mat-card-content>
+  </mat-card>
+</div>
+

@@ -1,5 +1,25 @@
 /* Batelada Component Styles */
 
+.card-header {
+  padding-bottom: 0;
+}
+
+.back-button {
+  span,
+  mat-icon {
+    vertical-align: middle;
+  }
+}
+
+mat-card-title {
+  margin-bottom: 16px;
+}
+
+.finalize-button {
+  margin-left: 10px; 
+}
+
+
 .batelada-container {
   min-height: 100vh;
   display: flex;

@@ -1,4 +1,5 @@
 import { Component, OnInit } from '@angular/core';
+import { Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, FormArray, Validators, ReactiveFormsModule } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
@@ -9,6 +10,7 @@ import { MatRadioModule } from '@angular/material/radio';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatTableModule } from '@angular/material/table';
 import { MatIconModule } from '@angular/material/icon';
+import { BateladaService } from '../services/batelada.service';
 
 @Component({
   selector: 'app-batelada',
@@ -25,7 +27,8 @@ import { MatIconModule } from '@angular/material/icon';
     MatRadioModule,
     MatProgressSpinnerModule,
     MatTableModule,
-    MatIconModule,
+    MatIconModule
+    
   ],
 })
 export class BateladaComponent implements OnInit {
@@ -39,10 +42,14 @@ export class BateladaComponent implements OnInit {
     'Pergunta 4',
     'Pergunta 5',
   ];
-  bateladas: string[] = ['BigBag 1', 'BigBag 2', 'BigBag 3', 'BigBag 4', 'BigBag 5'];
+  bateladas: string[] = ['BigBag 1', 'BigBag 2', 'BigBag 3'];
   displayedColumns: string[] = [];
 
-  constructor(private fb: FormBuilder) {}
+  constructor(private fb: FormBuilder, private router: Router, private bateladaService: BateladaService) {}
+
+    goBack(): void {
+    this.router.navigate(['/welcome']);
+  }
 
   ngOnInit(): void {
     this.initializeForm();
@@ -51,7 +58,7 @@ export class BateladaComponent implements OnInit {
 
   private initializeForm(): void {
     const questionsControls = this.questions.map((question) => {
-      const bateladaControls = this.bateladas.map((batelada) => this.fb.control(false));
+      const bateladaControls = this.bateladas.map((batelada) => this.fb.control(null));
       return this.fb.array(bateladaControls);
     });
 
@@ -71,6 +78,17 @@ export class BateladaComponent implements OnInit {
 
   getQuestionAnswers(questionIndex: number): FormArray {
     return this.answers.at(questionIndex) as FormArray;
+  }
+
+  get isFinalizeDisabled(): boolean {
+    // Disable if batelada number is missing
+    if (this.checklistForm.get('bateladaNumber')?.invalid) {
+      return true;
+    }
+    // Disable if any radio button is unselected (null)
+    return this.answers.controls.some(questionArray => 
+      (questionArray as FormArray).controls.some(control => control.value === null)
+    );
   }
 
   private setAnswerValidators(isRequired: boolean): void {
@@ -132,7 +150,7 @@ export class BateladaComponent implements OnInit {
     const newBateladaName = `BigBag ${this.bateladas.length + 1}`;
     this.bateladas.push(newBateladaName);
     this.answers.controls.forEach((questionArray) => {
-      (questionArray as FormArray).push(this.fb.control(false));
+            (questionArray as FormArray).push(this.fb.control(null));
     });
     this.updateDisplayedColumns();
   }
