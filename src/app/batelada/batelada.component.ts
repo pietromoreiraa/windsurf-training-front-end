@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { Router } from '@angular/router';
+import { Router, ActivatedRoute } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, FormArray, Validators, ReactiveFormsModule } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
@@ -36,6 +36,8 @@ export class BateladaComponent implements OnInit {
   checklistForm!: FormGroup;
   loading = false;
   error: string | null = null;
+  isEditMode = false;
+  currentBatchId: number | null = null;
   questions: string[] = [
     'Pergunta 1',
     'Pergunta 2',
@@ -49,6 +51,7 @@ export class BateladaComponent implements OnInit {
   constructor(
     private fb: FormBuilder, 
     private router: Router, 
+    private route: ActivatedRoute,
     private bateladaService: BateladaService,
     private snackBar: MatSnackBar
   ) {}
@@ -60,6 +63,87 @@ export class BateladaComponent implements OnInit {
   ngOnInit(): void {
     this.initializeForm();
     this.updateDisplayedColumns();
+    this.checkEditMode();
+  }
+
+  private checkEditMode(): void {
+    this.route.params.subscribe(params => {
+      const id = params['id'];
+      if (id) {
+        this.isEditMode = true;
+        this.currentBatchId = +id;
+        this.loadBatchData(this.currentBatchId);
+      }
+    });
+  }
+
+  private loadBatchData(id: number): void {
+    this.loading = true;
+    this.bateladaService.getBatchById(id).subscribe({
+      next: (batch: Batch) => {
+        console.log('Dados recebidos da API:', batch);
+        console.log('BigBags recebidos:', batch.bigbags);
+        this.populateFormWithBatchData(batch);
+        this.loading = false;
+      },
+      error: (error) => {
+        console.error('Erro ao carregar dados da batelada:', error);
+        this.error = 'Erro ao carregar dados da batelada';
+        this.snackBar.open(this.error, 'Fechar', { duration: 5000 });
+        this.loading = false;
+      }
+    });
+  }
+
+  private populateFormWithBatchData(batch: Batch): void {
+    console.log('Carregando dados da batelada:', batch);
+    
+    // Atualizar a lista de bigbags baseada nos dados carregados
+    this.bateladas = batch.bigbags.map((_, index) => `BigBag ${index + 1}`);
+    this.updateDisplayedColumns();
+
+    // Recriar o formulário com o número correto de bigbags
+    this.initializeForm();
+    
+    // Preencher o número da batelada
+    this.checklistForm.patchValue({
+      bateladaNumber: batch.batchNumber
+    });
+
+    // Aguardar um tick para garantir que o formulário foi criado
+    setTimeout(() => {
+      // Preencher as respostas individualmente
+      batch.bigbags.forEach((bigbag, bigbagIndex) => {
+        console.log(`Processando BigBag ${bigbagIndex + 1}:`, bigbag);
+        
+        this.questions.forEach((_, questionIndex) => {
+          const questionKey = `question${questionIndex + 1}` as keyof BigBag;
+          const answer = bigbag[questionKey];
+          
+          console.log(`Questão ${questionIndex + 1}, BigBag ${bigbagIndex + 1}:`, answer);
+          
+          if (answer !== undefined && answer !== null) {
+            try {
+              const formArray = this.getQuestionAnswers(questionIndex);
+              if (formArray && formArray.at(bigbagIndex)) {
+                // Converter valor numérico para booleano se necessário
+                const booleanValue = answer === 1 || answer === true;
+                formArray.at(bigbagIndex).setValue(booleanValue);
+                console.log(`✓ Valor definido: ${booleanValue} (convertido de ${answer}) para questão ${questionIndex + 1}, BigBag ${bigbagIndex + 1}`);
+              } else {
+                console.error(`✗ FormArray não encontrado para questão ${questionIndex + 1}, BigBag ${bigbagIndex + 1}`);
+              }
+            } catch (error) {
+              console.error(`Erro ao definir valor para questão ${questionIndex + 1}, BigBag ${bigbagIndex + 1}:`, error);
+            }
+          } else {
+            console.log(`Valor undefined/null para questão ${questionIndex + 1}, BigBag ${bigbagIndex + 1}`);
+          }
+        });
+      });
+      
+      console.log('Formulário final:', this.checklistForm.value);
+    }, 100);
   }
 
   private initializeForm(): void {
@@ -117,19 +201,38 @@ export class BateladaComponent implements OnInit {
     this.loading = true;
     
     const batchData = this.prepareBatchData();
-    this.bateladaService.createBatch(batchData).subscribe({
-      next: () => {
-        this.snackBar.open('Rascunho salvo com sucesso!', 'Fechar', { duration: 3000 });
-      },
-      error: (error) => {
-        console.error('Erro ao salvar rascunho:', error);
-        this.error = 'Erro ao salvar o rascunho';
-        this.snackBar.open(this.error, 'Fechar', { duration: 5000 });
-      },
-      complete: () => {
-        this.loading = false;
-      }
-    });
+    
+    if (this.isEditMode && this.currentBatchId) {
+      // Modo de edição - atualizar batelada existente
+      this.bateladaService.updateBatch(this.currentBatchId, batchData).subscribe({
+        next: () => {
+          this.snackBar.open('Rascunho atualizado com sucesso!', 'Fechar', { duration: 3000 });
+        },
+        error: (error) => {
+          console.error('Erro ao atualizar rascunho:', error);
+          this.error = 'Erro ao atualizar o rascunho';
+          this.snackBar.open(this.error, 'Fechar', { duration: 5000 });
+        },
+        complete: () => {
+          this.loading = false;
+        }
+      });
+    } else {
+      // Modo de criação - criar nova batelada
+      this.bateladaService.createBatch(batchData).subscribe({
+        next: () => {
+          this.snackBar.open('Rascunho salvo com sucesso!', 'Fechar', { duration: 3000 });
+        },
+        error: (error) => {
+          console.error('Erro ao salvar rascunho:', error);
+          this.error = 'Erro ao salvar o rascunho';
+          this.snackBar.open(this.error, 'Fechar', { duration: 5000 });
+        },
+        complete: () => {
+          this.loading = false;
+        }
+      });
+    }
   }
 
   onSaveAndFinalize(): void {
@@ -139,20 +242,40 @@ export class BateladaComponent implements OnInit {
       this.loading = true;
       
       const batchData = this.prepareBatchData();
-      this.bateladaService.createBatch(batchData).subscribe({
-        next: () => {
-          this.snackBar.open('Batelada finalizada com sucesso!', 'Fechar', { duration: 3000 });
-          this.router.navigate(['/batelada-list']);
-        },
-        error: (error) => {
-          console.error('Erro ao finalizar batelada:', error);
-          this.error = 'Erro ao finalizar a batelada';
-          this.snackBar.open(this.error, 'Fechar', { duration: 5000 });
-        },
-        complete: () => {
-          this.loading = false;
-        }
-      });
+      
+      if (this.isEditMode && this.currentBatchId) {
+        // Modo de edição - atualizar batelada existente
+        this.bateladaService.updateBatch(this.currentBatchId, batchData).subscribe({
+          next: () => {
+            this.snackBar.open('Batelada atualizada e finalizada com sucesso!', 'Fechar', { duration: 3000 });
+            this.router.navigate(['/batelada-list']);
+          },
+          error: (error) => {
+            console.error('Erro ao finalizar batelada:', error);
+            this.error = 'Erro ao finalizar a batelada';
+            this.snackBar.open(this.error, 'Fechar', { duration: 5000 });
+          },
+          complete: () => {
+            this.loading = false;
+          }
+        });
+      } else {
+        // Modo de criação - criar nova batelada
+        this.bateladaService.createBatch(batchData).subscribe({
+          next: () => {
+            this.snackBar.open('Batelada finalizada com sucesso!', 'Fechar', { duration: 3000 });
+            this.router.navigate(['/batelada-list']);
+          },
+          error: (error) => {
+            console.error('Erro ao finalizar batelada:', error);
+            this.error = 'Erro ao finalizar a batelada';
+            this.snackBar.open(this.error, 'Fechar', { duration: 5000 });
+          },
+          complete: () => {
+            this.loading = false;
+          }
+        });
+      }
     } else {
       this.error = 'Todos os campos são obrigatórios para finalizar.';
       this.snackBar.open(this.error, 'Fechar', { duration: 5000 });
