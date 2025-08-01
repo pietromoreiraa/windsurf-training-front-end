@@ -10,6 +10,7 @@ export const routes: Routes = [
   { path: 'welcome', component: WelcomeComponent, canActivate: [authGuard] },
   { path: 'register', component: RegisterComponent },
   { path: 'batelada', component: BateladaComponent, canActivate: [authGuard] },
+  { path: 'batelada/:id', component: BateladaComponent, canActivate: [authGuard] },
   { path: 'batelada-list', component: BateladaListComponent, canActivate: [authGuard] },
   { path: '', component: LoginComponent },
   { path: '**', redirectTo: '' }

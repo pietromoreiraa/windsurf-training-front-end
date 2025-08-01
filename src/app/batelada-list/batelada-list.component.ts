@@ -44,8 +44,22 @@ export class BateladaListComponent implements OnInit {
   }
 
   deleteBatelada(id: number): void {
-    console.log('Excluindo batelada com ID:', id);
-    this.bigbags = this.bigbags.filter(b => b.id !== id);
+    if (confirm('Tem certeza que deseja excluir esta batelada?')) {
+      this.bateladaService.deleteBatch(id).subscribe({
+        next: () => {
+          // Remove o item da lista local após a exclusão bem-sucedida
+          this.bigbags = this.bigbags.filter(b => b.id !== id);
+          console.log('Batelada excluída com sucesso');
+          // Opcional: Mostrar mensagem de sucesso
+          // this.snackBar.open('Batelada excluída com sucesso!', 'Fechar', { duration: 3000 });
+        },
+        error: (error) => {
+          console.error('Erro ao excluir batelada:', error);
+          // Opcional: Mostrar mensagem de erro
+          // this.snackBar.open('Erro ao excluir batelada. Tente novamente.', 'Fechar', { duration: 3000 });
+        }
+      });
+    }
   }
 
   goBack(): void {

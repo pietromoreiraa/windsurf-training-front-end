@@ -10,7 +10,8 @@ import { MatRadioModule } from '@angular/material/radio';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatTableModule } from '@angular/material/table';
 import { MatIconModule } from '@angular/material/icon';
-import { BateladaService } from '../services/batelada.service';
+import { MatSnackBar } from '@angular/material/snack-bar';
+import { BateladaService, Batch, BigBag } from '../services/batelada.service';
 
 @Component({
   selector: 'app-batelada',
@@ -45,7 +46,12 @@ export class BateladaComponent implements OnInit {
   bateladas: string[] = ['BigBag 1', 'BigBag 2', 'BigBag 3'];
   displayedColumns: string[] = [];
 
-  constructor(private fb: FormBuilder, private router: Router, private bateladaService: BateladaService) {}
+  constructor(
+    private fb: FormBuilder, 
+    private router: Router, 
+    private bateladaService: BateladaService,
+    private snackBar: MatSnackBar
+  ) {}
 
     goBack(): void {
     this.router.navigate(['/welcome']);
@@ -109,16 +115,21 @@ export class BateladaComponent implements OnInit {
       return;
     }
     this.loading = true;
-    try {
-      const formData = this.checklistForm.value;
-      console.log('Rascunho salvo:', formData);
-      // Add draft saving logic here
-    } catch (error) {
-      this.error = 'Erro ao salvar o rascunho';
-      console.error(error);
-    } finally {
-      this.loading = false;
-    }
+    
+    const batchData = this.prepareBatchData();
+    this.bateladaService.createBatch(batchData).subscribe({
+      next: () => {
+        this.snackBar.open('Rascunho salvo com sucesso!', 'Fechar', { duration: 3000 });
+      },
+      error: (error) => {
+        console.error('Erro ao salvar rascunho:', error);
+        this.error = 'Erro ao salvar o rascunho';
+        this.snackBar.open(this.error, 'Fechar', { duration: 5000 });
+      },
+      complete: () => {
+        this.loading = false;
+      }
+    });
   }
 
   onSaveAndFinalize(): void {
@@ -126,20 +137,27 @@ export class BateladaComponent implements OnInit {
 
     if (this.checklistForm.valid) {
       this.loading = true;
-      try {
-        const formData = this.checklistForm.value;
-        console.log('Formulário finalizado:', formData);
-        // Add final saving logic here
-      } catch (error) {
-        this.error = 'Erro ao finalizar o checklist';
-        console.error(error);
-      } finally {
-        this.loading = false;
-      }
+      
+      const batchData = this.prepareBatchData();
+      this.bateladaService.createBatch(batchData).subscribe({
+        next: () => {
+          this.snackBar.open('Batelada finalizada com sucesso!', 'Fechar', { duration: 3000 });
+          this.router.navigate(['/batelada-list']);
+        },
+        error: (error) => {
+          console.error('Erro ao finalizar batelada:', error);
+          this.error = 'Erro ao finalizar a batelada';
+          this.snackBar.open(this.error, 'Fechar', { duration: 5000 });
+        },
+        complete: () => {
+          this.loading = false;
+        }
+      });
     } else {
       this.error = 'Todos os campos são obrigatórios para finalizar.';
+      this.snackBar.open(this.error, 'Fechar', { duration: 5000 });
     }
-    // It's good practice to remove the validators after the check
+    
     this.setAnswerValidators(false);
   }
 
@@ -163,5 +181,34 @@ export class BateladaComponent implements OnInit {
       });
       this.updateDisplayedColumns();
     }
+  }
+
+  private prepareBatchData(): Omit<Batch, 'id'> {
+    const formValue = this.checklistForm.value;
+    const bigbags: BigBag[] = [];
+    
+    // Process each bigbag column
+    for (let i = 0; i < this.bateladas.length; i++) {
+      const bigbag: BigBag = {
+        numberOfBatch: i + 1
+      };
+      
+      // Process each question for this bigbag
+      this.questions.forEach((_, qIndex) => {
+        const answer = this.getQuestionAnswers(qIndex).at(i)?.value;
+        if (answer !== null && answer !== undefined) {
+          // Use type assertion to bypass TypeScript's strict checking
+          (bigbag as any)[`question${qIndex + 1}`] = answer;
+        }
+      });
+      
+      bigbags.push(bigbag);
+    }
+    
+    return {
+      batchNumber: Number(formValue.bateladaNumber),
+      createdByUserId: 1, // TODO: Replace with actual user ID from auth service
+      bigbags
+    };
   }
 }
